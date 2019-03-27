@@ -1,5 +1,5 @@
-import { Subject, Observable, combineLatest, ObservableInput } from 'rxjs';
-import { scan, startWith, shareReplay, filter, map, withLatestFrom, mergeAll } from 'rxjs/operators';
+import { Subject, Observable, combineLatest, ObservableInput, empty } from 'rxjs';
+import { scan, startWith, shareReplay, filter, map, withLatestFrom, mergeAll, catchError } from 'rxjs/operators';
 
 export class Actions extends Subject<Action> {
     ofType<T extends Action>(type: string): Observable<T> {
@@ -27,13 +27,14 @@ export interface Action {
 }
 
 export class Store implements Store {
-    private errorHandler(error: string) {
-        throw new Error(error);
-    }
     private stateSubject = new Subject<State>();
 
     public actions$: Actions = new Actions();
     public state$: Observable<State>;
+    public errorHandler(error: string) {
+        /* istanbul ignore next */
+        throw new Error(error);
+    }
 
     constructor(
         initialState: State = defaultInitialState,
@@ -49,15 +50,19 @@ export class Store implements Store {
             shareReplay(1)
         );
 
-        this.actions$.pipe(withLatestFrom(this.state$))
-            .subscribe(([action, state]) =>
-                this.update(
-                    reducers.reduce((newState: State, reducer) => {
-                        return { ...newState, ...reducer(newState, action) };
-                    }, state as State)
-                ),
-                this.errorHandler
-            );
+        this.actions$.pipe(
+            withLatestFrom(this.state$),
+            map(([action, state]) =>
+            this.update(
+                reducers.reduce((newState: State, reducer) => {
+                    return { ...newState, ...reducer(newState, action) };
+                }, state as State)
+            )),
+            catchError(error => {
+                this.errorHandler(error);
+                return empty();
+            })
+        ).subscribe();
 
         const effects: Observable<any>[] = effectsClasses.reduce((effects, klass) => {
             const effectsClassInstance = new klass(this);
@@ -67,10 +72,13 @@ export class Store implements Store {
         combineLatest.apply(null, effects).pipe(
             // @ts-ignore: Strict
             mergeAll(),
-            filter(action => !!action)
+            filter(action => !!action),
+            catchError(error => {
+                this.errorHandler(error);
+                return empty();
+            })
         ).subscribe(
-            (action: Action) => this.dispatch(action),
-            this.errorHandler
+            (action: Action) => this.dispatch(action)
         );
     }
 
@@ -80,9 +88,9 @@ export class Store implements Store {
 
     dispatch(action: Action | Action[]): void {
         if (action instanceof Array) {
-            action.forEach(action => this.actions$.next(action));
+            action.forEach(action => setTimeout(_ => this.actions$.next(action), 0));
         } else {
-            this.actions$.next(action);
+            setTimeout(_ => this.actions$.next(action), 0);
         }
     }
 }

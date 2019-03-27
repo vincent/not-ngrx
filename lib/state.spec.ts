@@ -1,7 +1,6 @@
 import { Store } from './state';
 import { Observable } from 'rxjs';
-import { first, skip, map } from 'rxjs/operators';
-import { Effect, Effects } from './effects';
+import { first, skip } from 'rxjs/operators';
 
 describe('Store', () => {
 
@@ -46,33 +45,28 @@ describe('Store', () => {
         });
     });
 
-    it("should dispatch action from effect", done => {
-        const action1 = { type: 'An First Action Type'  };
-        const action2 = { type: 'An Second Action Type' };
-        class TestEffect extends Effects {
-            @Effect()
-            onTestEffect$ = this.actions$.ofType(action1.type).pipe(map(_ => action2))
-        }
+    it("should trigger the default errorHandler on reducer error", done => {
+        const store = new Store({}, [ state => { throw new Error('An error that should be catched') } ], []);
+        const spy = jest.spyOn(store, 'errorHandler').mockImplementation(() => null);
+        try {
+            store.dispatch({ type: 'An Action Type' });
+        } catch (e) { }
 
-        const store = new Store({}, [], [TestEffect]);
-
-        store.actions$.subscribe(a => console.log('ACTION', a));
-
-        const sub1 = store.actions$.subscribe(a => {
-            expect(a).toEqual(action1);
-            sub1.unsubscribe();
-        });
-
-        /* * /
-        const sub2 = store.actions$.pipe(skip(1)).subscribe(a => {
-            expect(a).toEqual(action2);
-            sub2.unsubscribe();
+        setTimeout(_ => {
+            expect(spy).toHaveBeenCalled();
             done();
-        });
-        /* */
-
-        store.dispatch(action1);
+        }, 0);
     });
 
+    it("should trigger the custom errorHandler on reducer error", done => {
+        const errorHandler = jest.fn(() => null);
+        const store = new Store({}, [ state => { throw new Error('An error that should be catched') } ], [], errorHandler);
+        store.dispatch({ type: 'An Action Type' });
+
+        setTimeout(_ => {
+            expect(errorHandler).toHaveBeenCalled();
+            done();
+        }, 0);
+    });
 
 });

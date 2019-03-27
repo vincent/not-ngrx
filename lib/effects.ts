@@ -6,7 +6,11 @@ export const METADATA_KEY = '__@nnrx/effects__';
 export function Effect() {
     return function (target: Effects, propertyKey: string) {
         const ctor: any = target.constructor;
-        const meta = ctor[METADATA_KEY] ? ctor[METADATA_KEY] : (ctor[METADATA_KEY] = []);
+        let meta;
+        if (! ctor.hasOwnProperty(METADATA_KEY)) {
+            ctor[METADATA_KEY] = [];
+        }
+        meta = ctor[METADATA_KEY];
         meta.push(propertyKey);
     } as (target: {}, propertyName: string | symbol) => void;
 }
@@ -14,8 +18,11 @@ export function Effect() {
 export class Effects {
     get actions$() { return this.store$.actions$; };
     get effects(): Observable<Action>[] {
-        // @ts-ignore: Strict
-        return ((this.constructor[METADATA_KEY] as string[]) || []).map((e: string) => this[e]);
+        if (this.constructor.hasOwnProperty(METADATA_KEY)) {
+            // @ts-ignore: Strict
+            return (this.constructor[METADATA_KEY] as string[]).map((e: string) => this[e]);
+        }
+        return [];
     };
     constructor(protected store$: Store) {}
 }
