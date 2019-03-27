@@ -1,0 +1,44 @@
+{
+  "name": "not-ngrx",
+  "version": "1.0.0",
+  "description": "A small state management library inspired from ngrx api.",
+  "main": "index.js",
+  "typings": "lib/index.d.ts",
+  "scripts": {
+    "test": "jest",
+    "prepare": "npm run build",
+    "build": "tsc"
+  },
+  "jest": {
+    "transform": {
+      "^.+\\.tsx?$": "ts-jest"
+    },
+    "moduleFileExtensions": [
+      "ts",
+      "js"
+    ],
+    "testRegex": "^.+\\.spec\\.ts$",
+    "testEnvironment": "node",
+    "collectCoverage": true
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/vincent/not-ngrx.git"
+  },
+  "author": "Vincent Lark <vincent.lark@gmail.com>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/vincent/not-ngrx/issues"
+  },
+  "homepage": "https://github.com/vincent/not-ngrx#readme",
+  "dependencies": {
+    "jest-cli": "^24.5.0",
+    "rxjs": "^6.4.0"
+  },
+  "devDependencies": {
+    "@types/jest": "^24.0.11",
+    "jest": "^24.5.0",
+    "ts-jest": "^24.0.0",
+    "typescript": "^3.3.4000"
+  }
+}
