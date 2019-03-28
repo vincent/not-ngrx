@@ -1,19 +1,22 @@
-import { Effect, Effects } from "../lib/effects";
-import { Store } from "../lib/state";
-import { map } from "rxjs/operators";
+import { Store, State, Action } from "../lib/state";
 
-const action1 = { type: 'An First Action Type'  };
-const action2 = { type: 'An Second Action Type' };
+// A reducer
+const reducer = (state: State, action: Action) => {
+  switch (action.type) {
+      case 'MY_ACTION_TYPE':
+        return { ...state, sideEffect: true };
+    default:
+        return state;
+  }
+};
 
-class TestEffect extends Effects {
-    @Effect()
-    onTestEffect$ = this.actions$.ofType(action1.type).pipe(map(_ => action2))
-}
+// The store
+const store = new Store({}, [ reducer ]);
 
-const store = new Store({}, [], [TestEffect]);
+// Dispatch an action
+store.dispatch({ type: 'MY_ACTION_TYPE' });
 
-store.actions$.subscribe(a => {
-    console.log('ACTION', a);
-});
-
-store.dispatch(action1);
+// Listen to state changes
+store.state$.subscribe(state => {
+    console.log(state);
+})
