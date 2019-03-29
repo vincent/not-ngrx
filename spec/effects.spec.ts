@@ -1,6 +1,6 @@
-import { Effects, Effect } from "./effects";
 import { map, skip } from "rxjs/operators";
-import { Store } from "./state";
+import { Effects, Effect } from "../lib/effects";
+import { Store } from "../lib/state";
 
 describe('Effects', () => {
 

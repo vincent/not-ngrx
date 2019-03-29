@@ -10,6 +10,9 @@
     "build": "tsc"
   },
   "jest": {
+    "roots": [
+      "<rootDir>/spec"
+    ],
     "transform": {
       "^.+\\.tsx?$": "ts-jest"
     },

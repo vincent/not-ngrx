@@ -1,7 +1,6 @@
-import { Store } from './state';
-import { Observable, empty } from 'rxjs';
-import { first, skip, catchError } from 'rxjs/operators';
-import { Action } from './models';
+import { Observable } from 'rxjs';
+import { first, skip } from 'rxjs/operators';
+import { Store } from '../lib/state';
 
 describe('Store', () => {
 

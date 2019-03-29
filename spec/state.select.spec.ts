@@ -1,4 +1,4 @@
-import { Store } from './state';
+import { Store } from '../lib/state';
 
 describe('Selectors', () => {
 
