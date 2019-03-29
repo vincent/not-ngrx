@@ -6,7 +6,7 @@ A small state management library inspired from ngrx api
 # usage
 
 ```
-import { Store, State, Action } from "not-ngrx";
+import { Store, Action } from "not-ngrx";
 
 // A state interface
 interface State {
@@ -38,6 +38,9 @@ const reducer = (state: State, action: Action): State => {
 // The store
 const store = new Store<State>(initialState, [ reducer ]);
 
+// Dispatch an action
+store.dispatch({ type: 'MY_ACTION_TYPE' });
+
 // Listen to root state changes
 store.subscribe(root => {
     console.log(root);
@@ -47,8 +50,5 @@ store.subscribe(root => {
 store.select('feature.prop').subscribe(slice => {
     console.log(slice);
 });
-
-// Dispatch an action
-store.dispatch({ type: 'MY_ACTION_TYPE' });
 ```
 
