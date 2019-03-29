@@ -1,5 +1,6 @@
-import { Store, Action } from './state';
 import { Observable } from 'rxjs';
+import { Store } from './state';
+import { Action } from './models';
 
 export const METADATA_KEY = '__@nnrx/effects__';
 
@@ -15,7 +16,7 @@ export function Effect() {
     } as (target: {}, propertyName: string | symbol) => void;
 }
 
-export class Effects {
+export class Effects<Actions extends Action = Action> {
     get actions$() { return this.store$.actions$; };
     get effects(): Observable<Action>[] {
         if (this.constructor.hasOwnProperty(METADATA_KEY)) {
@@ -24,5 +25,5 @@ export class Effects {
         }
         return [];
     };
-    constructor(protected store$: Store) {}
+    constructor(protected store$: Store<Actions>) {}
 }

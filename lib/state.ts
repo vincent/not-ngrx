@@ -1,49 +1,30 @@
-import { Subject, Observable, combineLatest, ObservableInput, empty, Observer } from 'rxjs';
-import { scan, startWith, shareReplay, filter, map, withLatestFrom, mergeAll, catchError } from 'rxjs/operators';
+import { Subject, Observable, combineLatest, empty, Observer } from 'rxjs';
+import { scan, startWith, shareReplay, filter, map, withLatestFrom, mergeAll, catchError, pluck, distinctUntilChanged } from 'rxjs/operators';
+import { Action, ActionReducer, Type } from './models';
 
-export class Actions extends Subject<Action> {
+export class ActionsSubject extends Subject<Action> {
     ofType<A extends Action>(type: string): Observable<A> {
         return this.asObservable().pipe(filter(action => action.type === type), map(action => action as A));
     }
 }
 
-interface Type<T> extends Function { new (...args: any[]): T; }
-
-export interface Action {
-    type: string;
-}
-
-export type Reducer<State, Actions> = (state: State, action: Actions) => State;
-
-export interface State { }
-
-export const defaultInitialState: State = { }
-
-export interface Action {
-    type: string;
-}
-
 export class Store<T> extends Observable<T> implements Observer<Action> {
-    private stateSubject = new Subject<State>();
+    private rootState = new Subject<T>();
+    private reducers: any[] = [];
 
-    public actions$: Actions = new Actions();
-    public errorHandler(error: string) {
-        /* istanbul ignore next */
-        throw new Error(error);
-    }
+    public actions$: ActionsSubject = new ActionsSubject();
 
     constructor(
-        initialState: State = defaultInitialState,
-        reducers: Reducer<State, Action>[] = [],
-        effectsClasses: Type<any>[] = [],
-        errorHandler?: (error: string) => void
+        initialState: T = <T>{},
+        reducers: any[] = [],
+        effectsClasses: Type<any>[] = []
     ) {
         super();
 
-        if (errorHandler) this.errorHandler = errorHandler;
-        this.stateSubject = new Subject<State>();
-        this.source = this.stateSubject.asObservable().pipe(
-            scan((acc: State, newVal: State) => ({ ...acc, ...newVal }), initialState),
+        this.rootState = new Subject<T>();
+        this.reducers = this.reducers.concat(reducers);
+        this.source = this.rootState.asObservable().pipe(
+            scan((acc: T, newVal: T) => ({ ...acc, ...newVal }), initialState),
             startWith(initialState),
             shareReplay(1)
         );
@@ -51,13 +32,14 @@ export class Store<T> extends Observable<T> implements Observer<Action> {
         this.actions$.pipe(
             withLatestFrom(this.source),
             map(([action, state]) =>
-            this.update(
-                reducers.reduce((newState: State, reducer) => {
-                    return { ...newState, ...reducer(newState, action) };
-                }, state as State)
-            )),
+                this.rootState.next(
+                    this.reducers.reduce((newState: T, reducer) => {
+                        return { ...newState, ...reducer(newState, action) };
+                    }, state)
+                )
+            ),
             catchError(error => {
-                this.errorHandler(error);
+                this.error(error);
                 return empty();
             })
         ).subscribe();
@@ -72,35 +54,63 @@ export class Store<T> extends Observable<T> implements Observer<Action> {
             mergeAll(),
             filter(action => !!action),
             catchError(error => {
-                this.errorHandler(error);
+                this.error(error);
                 return empty();
             })
         ).subscribe(
-            (action: Action) => this.dispatch(action)
+            (action: Action) => setTimeout(_ => this.dispatch(action), 0)
         );
     }
 
-    next(partialState: State): void {
-        this.stateSubject.next(partialState);
-    };
-
-    update(partialState: State): void {
-        this.stateSubject.next(partialState);
-    };
-
-    dispatch<V extends Action = Action>(action: V): void {
+    dispatch<V extends Action = Action>(action: V | V[]) {
         if (action instanceof Array) {
-            action.forEach(action => setTimeout(_ => this.actions$.next(action), 0));
+            action.map(a => this.actions$.next(a));
+
         } else {
-            setTimeout(_ => this.actions$.next(action), 0);
+            this.actions$.next(action);
         }
+    }
+
+    next(action: Action) {
+        this.actions$.next(action);
     }
 
     error(err: any) {
         this.actions$.error(err);
-      }
+    }
 
     complete() {
         this.actions$.complete();
+    }
+
+    addReducer<T, Actions extends Action = Action>(reducer: ActionReducer<T, Actions>) {
+        this.reducers.push(reducer);
+    }
+
+    removeReducer<T, Actions extends Action = Action>(reducer: ActionReducer<T, Actions>) {
+        this.reducers = this.reducers.filter(r => r !== reducer);
+    }
+
+    select<Props, K>(
+        pathOrMapFn: ((state: T, props?: Props) => any) | string
+    ): Observable<K> {
+        let mapped$: Observable<any>;
+
+        if (typeof pathOrMapFn === 'string') {
+            mapped$ = this.source.pipe(pluck(...pathOrMapFn.split('.')));
+
+        } else if (typeof pathOrMapFn === 'function') {
+            mapped$ = this.pipe(
+                map(source => pathOrMapFn(source))
+            );
+
+        } else {
+            throw new TypeError(
+                `Unexpected type '${typeof pathOrMapFn}' in select operator,` +
+                ` expected 'string' or 'function'`
+            );
+        }
+
+        return mapped$.pipe(distinctUntilChanged());
     }
 }

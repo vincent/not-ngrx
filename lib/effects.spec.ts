@@ -73,7 +73,7 @@ describe('Effects', () => {
             onTestEffect$ = this.actions$.pipe(map(_ => { throw new Error('An error that should be catched') }))
         }
         const store = new Store({}, [], [TestEffect]);
-        const spy = jest.spyOn(store, 'errorHandler').mockImplementation(() => null);;
+        const spy = jest.spyOn(store, 'error').mockImplementation(() => null);;
         store.dispatch({ type: 'An Action Type' });
 
         setTimeout(_ => {
@@ -82,18 +82,4 @@ describe('Effects', () => {
         }, 0);
     });
 
-    it("should trigger the errorHandler on effect error", done => {
-        const errorHandler = jest.fn(() => null);
-        class TestEffect extends Effects {
-            @Effect()
-            onTestEffect$ = this.actions$.pipe(map(_ => { throw new Error('An error that should be catched') }))
-        }
-        const store = new Store({}, [], [TestEffect], errorHandler);
-        store.dispatch({ type: 'An Action Type' });
-
-        setTimeout(_ => {
-            expect(errorHandler).toHaveBeenCalled();
-            done();
-        }, 0);
-    });
 });
