@@ -1,8 +1,27 @@
-import { map, skip } from "rxjs/operators";
+import { map, skip, withLatestFrom } from "rxjs/operators";
 import { Effects, Effect } from "../lib/effects";
 import { Store } from "../lib/state";
 
 describe('Effects', () => {
+
+
+    it("should have access to the state", done => {
+        const action1 = { type: 'An First Action Type'  };
+        const initial = { prop: 'value' };
+        class TestEffect extends Effects {
+            @Effect()
+            onTestEffect$ = this.actions$.ofType(action1.type).pipe(
+                withLatestFrom(this.store$),
+                map(([action, state]) => {
+                    expect(state).toHaveProperty('prop');
+                    expect((<any>state).prop).toEqual(initial.prop);
+                    done();
+                })
+            )
+        }
+        const store = new Store(initial, [], [TestEffect]);        
+        store.dispatch(action1);
+    });
 
     it("should dispatch action from effect", done => {
         const action1 = { type: 'An First Action Type'  };
@@ -17,6 +36,7 @@ describe('Effects', () => {
             expect(a).toEqual(action1);
             sub1.unsubscribe();
         });
+
         const sub2 = store.actions$.pipe(skip(1)).subscribe(a => {
             expect(a).toEqual(action2);
             sub2.unsubscribe();

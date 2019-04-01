@@ -5,7 +5,7 @@ import { Action } from './models';
 export const METADATA_KEY = '__@nnrx/effects__';
 
 export function Effect() {
-    return function (target: Effects, propertyKey: string) {
+    return function <T>(target: Effects<T>, propertyKey: string) {
         const ctor: any = target.constructor;
         let meta;
         if (! ctor.hasOwnProperty(METADATA_KEY)) {
@@ -16,7 +16,7 @@ export function Effect() {
     } as (target: {}, propertyName: string | symbol) => void;
 }
 
-export class Effects<Actions extends Action = Action> {
+export class Effects<T, Actions extends Action = Action> {
     get actions$() { return this.store$.actions$; };
     get effects(): Observable<Action>[] {
         if (this.constructor.hasOwnProperty(METADATA_KEY)) {
@@ -25,5 +25,5 @@ export class Effects<Actions extends Action = Action> {
         }
         return [];
     };
-    constructor(protected store$: Store<Actions>) {}
+    constructor(protected store$: Store<T>) {}
 }

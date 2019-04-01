@@ -1,12 +1,12 @@
 {
   "name": "not-ngrx",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "A small state management library inspired from ngrx api.",
   "main": "dist/index.js",
   "typings": "dist/index.d.ts",
   "scripts": {
     "test": "jest",
-    "prepare": "npm run build",
+    "prepare": "npm test && npm run build",
     "build": "tsc"
   },
   "jest": {
