@@ -3,6 +3,10 @@ A small state management library inspired from ngrx api
 
 # install
 
+```
+npm install not-ngrx
+```
+
 # usage
 
 ```
